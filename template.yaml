@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  VisitorsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Visitors
+      AttributeDefinitions:
+        - AttributeName: "page_id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "page_id"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST
+  VisitorCounterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref VisitorsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VisitorsTable
+      Runtime: python3.11
+      CodeUri: src/
+      Handler: app.update_counter
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /count
+            Method: GET
+Outputs:
+  VisitorApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage for Visitor Counter"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/count"
